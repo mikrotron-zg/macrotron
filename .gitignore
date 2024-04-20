@@ -5,3 +5,6 @@ __pycache__/
 
 # Settings file
 settings.toml
+
+# VSCode files
+.vscode/
