@@ -8,3 +8,6 @@ settings.toml
 
 # VSCode files
 .vscode/
+
+# Generated 3D model files
+*.stl
