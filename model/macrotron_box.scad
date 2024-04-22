@@ -29,20 +29,23 @@
  * pos -> position
  */
 
+// 3D print tolerance - you might need to adjust this value for your printer
+tolerance = 0.25;
+
 // Adafruit QT Py dimensions
-qtpy_pcb_length = 20.8;
-qtpy_pcb_width = 17.8;
-qtpy_pcb_height = 1.6;
-qtpy_corner_radius = 2.5;
-qtpy_usbc_clearance = 1.6;
+qtpy_pcb_length = 20.8 + tolerance;
+qtpy_pcb_width = 17.8 + tolerance;
+qtpy_pcb_height = 1.6 + tolerance;
+qtpy_corner_radius = 2.5 + tolerance;
+qtpy_usbc_clearance = 2;
 
 // NeoKey board dimensions
-neokey_pcb_length = 76.2;
-neokey_pcb_width = 21.6;
-neokey_pcb_height = 1.6;
+neokey_pcb_length = 76.2 + tolerance;
+neokey_pcb_width = 21.6 + tolerance;
+neokey_pcb_height = 1.6 + tolerance;
 neokey_pcb_clearance = 2.5;
-neokey_corner_radius = 2.5;
-neokey_mh_dia = 2.5;
+neokey_corner_radius = 2.5 + tolerance;
+neokey_mh_dia = 2.5 - tolerance;
 neokey_mh_offset = 19.05;
 neokey_mh_pos = [ [neokey_mh_offset, neokey_mh_dia], 
                   [neokey_pcb_length - neokey_mh_offset, neokey_mh_dia],
@@ -54,12 +57,14 @@ box_wall = 3;
 box_wall_overlap = 3;
 box_component_spacing = 10;
 box_channel_width = neokey_pcb_width - 2*neokey_pcb_clearance;
-box_channel_height = 5;
+box_channel_height = 3.5;
 box_length = qtpy_pcb_length + neokey_pcb_length + 2*box_wall + 2*box_component_spacing;
 box_width = neokey_pcb_width + 2*box_wall;
 box_bottom_height = box_wall + box_channel_height + neokey_pcb_height + box_wall_overlap;
+box_top_height = box_wall + 3 + box_wall_overlap;
 box_inner_radius = 2.5;
 box_corner_radius = box_wall + box_inner_radius;
+
 // Utility variables
 $fn = 150; // Makes rounded object smoother
 ex = 0.001; // Extra dimension to remove wall ambiguity in preview mode
@@ -72,8 +77,34 @@ ex = 0.001; // Extra dimension to remove wall ambiguity in preview mode
 macrotron_box();
 
 module macrotron_box() {
-    box_bottom();
-    //usbc_connector(qtpy_usbc_clearance);
+    box_top();
+    translate ([0, 1.5*box_width, 0]) box_bottom();
+}
+
+module box_top() {
+    overlap_tolerance = 0.15;
+    difference() {
+        // Main body
+        union() {
+            rounded_rect(box_length, box_width, box_top_height - box_wall_overlap, box_corner_radius);
+            translate([box_wall/2 + overlap_tolerance/2, box_wall/2 + overlap_tolerance/2, 
+                       box_top_height - box_wall_overlap])
+                rounded_rect(box_length - box_wall - overlap_tolerance, 
+                             box_width - box_wall - overlap_tolerance, 
+                             box_wall_overlap - overlap_tolerance, box_inner_radius);
+        }
+        // Channel
+        translate([box_wall, box_width/2 - box_channel_width/2, box_wall])
+            cube([box_length - 2*box_wall, box_channel_width, 
+                  box_top_height - box_wall + ex]);
+        // Keyboard cutout
+        translate([box_wall + qtpy_pcb_length + box_component_spacing, 
+                   box_width/2 - neokey_pcb_width/2 + 1, -ex])
+            cube([neokey_pcb_length, neokey_pcb_width - 2, box_top_height + 2*ex]);
+        // USB-C cutout
+        translate([-ex, box_width/2, box_top_height])
+            mirror([0, 0, 1]) rotate(-90) usbc_connector(qtpy_usbc_clearance);
+    }
 }
 
 module box_bottom() {
@@ -92,7 +123,7 @@ module box_bottom() {
                    box_bottom_height - box_wall_overlap - qtpy_pcb_height + ex]) qtpy_pcb();
         // NeoKey slot
         translate([box_wall + qtpy_pcb_length + box_component_spacing, box_width/2 - neokey_pcb_width/2, 
-                   box_bottom_height - box_wall_overlap - neokey_pcb_height + ex]) neokey_pcb();
+                   box_bottom_height - box_wall_overlap - neokey_pcb_height + ex]) neokey_pcb(false);
         // USB-C cutout
         translate([-ex, box_width/2, box_bottom_height - box_wall_overlap])
             rotate(-90) usbc_connector(qtpy_usbc_clearance);

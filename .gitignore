@@ -11,3 +11,4 @@ settings.toml
 
 # Generated 3D model files
 *.stl
+*.3mf
